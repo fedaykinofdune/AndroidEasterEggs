@@ -67,6 +67,18 @@ fun DrawScope.zoom(zoom: Float, block: ZoomedDrawScope.() -> Unit) {
     ds.scale(zoom) { block(ds) }
 }
 
+class VisibleUniverse(namer: Namer, randomSeed: Long) : Universe(namer, randomSeed) {
+    // Magic variable. Every time we update it, Compose will notice and redraw the universe.
+    val triggerDraw = mutableStateOf(0L)
+
+    fun simulateAndDrawFrame(nanos: Long) {
+        // By writing this value, Compose will look for functions that read it (like drawZoomed).
+        triggerDraw.value = nanos
+
+        step(nanos)
+    }
+}
+
 /**
  * A device for observing changes to a [Simulator] such as a [Universe].
  * [observer] will be invoked each time a [Simulator.step] has completed.
@@ -167,8 +179,10 @@ private class UniverseModifierNode(
     }
 }
 
-fun ZoomedDrawScope.drawUniverse(universe: Universe) {
+fun ZoomedDrawScope.drawUniverse(universe: VisibleUniverse) {
     with(universe) {
+        triggerDraw.value // Please recompose when this value changes.
+
         constraints.forEach {
             when (it) {
                 is Landing -> drawLanding(it)

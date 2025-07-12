@@ -39,7 +39,7 @@ const val UPDATE_FREQUENCY_SEC = 1f
 fun lerpRange(range: ClosedFloatingPointRange<Float>, x: Float): Float =
     lerp(range.start, range.endInclusive, x)
 
-class UniverseProgressNotifier(val context: Context, val universe: Universe) {
+class UniverseProgressNotifier(val context: Context, val universe: VisibleUniverse) {
 
     @ChecksSdkIntAtLeast(Build.VERSION_CODES.BAKLAVA)
     private val isProgressNotifierSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA

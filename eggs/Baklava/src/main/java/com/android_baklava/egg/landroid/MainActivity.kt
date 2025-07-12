@@ -26,6 +26,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.forEachGesture
@@ -148,7 +149,7 @@ fun getDessertCode(): String = DessertUtils.getDessertCode()
 //        }
 //    }
 
-fun getSystemDesignation(universe: Universe): String {
+fun getSystemDesignation(universe: VisibleUniverse): String {
     return "${getDessertCode()}-${universe.randomSeed % 100_000}"
 }
 
@@ -170,7 +171,7 @@ fun DebugText(text: MutableState<String>) {
 }
 
 @Composable
-fun Telemetry(universe: Universe, showControls: Boolean) {
+fun Telemetry(universe: VisibleUniverse, showControls: Boolean) {
     var topVisible by remember { mutableStateOf(false) }
     var bottomVisible by remember { mutableStateOf(false) }
 
@@ -336,7 +337,7 @@ fun Telemetry(universe: Universe, showControls: Boolean) {
 class MainActivity : ComponentActivity() {
     private var notifier: UniverseProgressNotifier? = null
     private var foldState = mutableStateOf<FoldingFeature?>(null)
-    private var universe: Universe? = null
+            private var universe: VisibleUniverse? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -346,7 +347,7 @@ class MainActivity : ComponentActivity() {
 //        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.Red.toArgb()))
         enableEdgeToEdge()
 
-        universe = Universe(namer = Namer(resources), randomSeed = randomSeed())
+                    universe = VisibleUniverse(namer = Namer(resources), randomSeed = randomSeed())
 
         if (TEST_UNIVERSE) {
             universe!!.initTest()
@@ -446,7 +447,7 @@ class MainActivity : ComponentActivity() {
 @Preview(name = "tablet", device = Devices.TABLET)
 @Composable
 fun MainActivityPreview() {
-    val universe = Universe(namer = Namer(Resources.getSystem()), randomSeed = randomSeed())
+    val universe = VisibleUniverse(namer = Namer(Resources.getSystem()), randomSeed = randomSeed())
 
     universe.initTest()
 
@@ -531,11 +532,11 @@ fun FlightStick(
 @Composable
 fun Spaaaace(
     modifier: Modifier,
-    u: Universe,
+    u: VisibleUniverse,
     foldState: MutableState<FoldingFeature?> = mutableStateOf(null),
 ) {
     LaunchedEffect(u) {
-        while (true) withInfiniteAnimationFrameNanos { frameTimeNanos -> u.step(frameTimeNanos) }
+        while (true) withInfiniteAnimationFrameNanos { frameTimeNanos -> u.simulateAndDrawFrame(frameTimeNanos) }
     }
 
     var cameraZoom by remember { mutableFloatStateOf(DEFAULT_CAMERA_ZOOM) }
@@ -563,7 +564,7 @@ fun Spaaaace(
     val centerFracY: Float by
         animateFloatAsState(if (halfFolded && horizontalFold) 0.25f else 0.5f, label = "centerY")
 
-    UniverseCanvas(u, canvasModifier) { u ->
+    Canvas(canvasModifier) {
         drawRect(Colors.Eigengrau, Offset.Zero, size)
 
         val closest = u.closestPlanet()
