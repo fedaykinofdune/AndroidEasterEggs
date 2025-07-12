@@ -26,6 +26,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.forEachGesture
@@ -563,7 +564,7 @@ fun Spaaaace(
     val centerFracY: Float by
         animateFloatAsState(if (halfFolded && horizontalFold) 0.25f else 0.5f, label = "centerY")
 
-    UniverseCanvas(u, canvasModifier) { u ->
+    Canvas(canvasModifier) {
         drawRect(Colors.Eigengrau, Offset.Zero, size)
 
         val closest = u.closestPlanet()

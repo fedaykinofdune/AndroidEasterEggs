@@ -61,7 +61,7 @@ class DreamUniverse : DreamService() {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        val universe = Universe(namer = Namer(resources), randomSeed = randomSeed())
+        val universe = VisibleUniverse(namer = Namer(resources), randomSeed = randomSeed())
 
         isInteractive = false
 
