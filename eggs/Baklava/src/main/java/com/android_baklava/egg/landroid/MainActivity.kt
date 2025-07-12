@@ -19,6 +19,7 @@ package com.android_baklava.egg.landroid
 import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -106,6 +107,8 @@ const val MAX_CAMERA_ZOOM = 5f
 var TOUCH_CAMERA_PAN = false
 var TOUCH_CAMERA_ZOOM = false
 var DYNAMIC_ZOOM = false
+var MANUAL_ZOOM = false
+var MANUAL_ZOOM_LEVEL = DEFAULT_CAMERA_ZOOM
 
 fun dailySeed(): Long {
     val today = GregorianCalendar()
@@ -269,7 +272,13 @@ fun Telemetry(universe: Universe, showControls: Boolean) {
                             universe.ship.autopilot?.let {
                                 it.enabled = !it.enabled
                                 DYNAMIC_ZOOM = it.enabled
-                                if (!it.enabled) universe.ship.thrust = Vec2.Zero
+                                if (!it.enabled) {
+                                    universe.ship.thrust = Vec2.Zero
+                                    MANUAL_ZOOM = true
+                                    MANUAL_ZOOM_LEVEL = DEFAULT_CAMERA_ZOOM
+                                } else {
+                                    MANUAL_ZOOM = false
+                                }
                             }
                         }
                     }
@@ -327,6 +336,7 @@ fun Telemetry(universe: Universe, showControls: Boolean) {
 class MainActivity : ComponentActivity() {
     private var notifier: UniverseProgressNotifier? = null
     private var foldState = mutableStateOf<FoldingFeature?>(null)
+    private var universe: Universe? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -336,26 +346,26 @@ class MainActivity : ComponentActivity() {
 //        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.Red.toArgb()))
         enableEdgeToEdge()
 
-        val universe = Universe(namer = Namer(resources), randomSeed = randomSeed())
+        universe = Universe(namer = Namer(resources), randomSeed = randomSeed())
 
         if (TEST_UNIVERSE) {
-            universe.initTest()
+            universe!!.initTest()
         } else {
-            universe.initRandom()
+            universe!!.initRandom()
         }
 
         ComponentActivationActivity.lockUnlockComponents(applicationContext)
 
         // set up the autopilot in case we need it
-        val autopilot = Autopilot(universe.ship, universe)
-        universe.ship.autopilot = autopilot
-        universe.add(autopilot)
+        val autopilot = Autopilot(universe!!.ship, universe!!)
+        universe!!.ship.autopilot = autopilot
+        universe!!.add(autopilot)
         autopilot.enabled = false
 
-        notifier = UniverseProgressNotifier(this, universe)
+        notifier = UniverseProgressNotifier(this, universe!!)
 
         setContent {
-            Spaaaace(modifier = Modifier.fillMaxSize(), u = universe, foldState = foldState)
+            Spaaaace(modifier = Modifier.fillMaxSize(), u = universe!!, foldState = foldState)
             DebugText(DEBUG_TEXT)
 
             val minRadius = 50.dp.toLocalPx()
@@ -366,7 +376,7 @@ class MainActivity : ComponentActivity() {
                 maxRadius = maxRadius,
                 color = Color.Green,
             ) { vec ->
-                (universe.follow as? Spacecraft)?.let { ship ->
+                (universe!!.follow as? Spacecraft)?.let { ship ->
                     if (vec == Vec2.Zero) {
                         ship.thrust = Vec2.Zero
                     } else {
@@ -387,8 +397,28 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            Telemetry(universe, true)
+            Telemetry(universe!!, true)
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        // Only allow manual zoom when autopilot is disabled
+        val autopilotEnabled = universe?.ship?.autopilot?.enabled == true
+        if (!autopilotEnabled) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_VOLUME_UP -> {
+                    MANUAL_ZOOM = true
+                    MANUAL_ZOOM_LEVEL = clamp(MANUAL_ZOOM_LEVEL * 1.2f, MIN_CAMERA_ZOOM, MAX_CAMERA_ZOOM)
+                    return true
+                }
+                KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                    MANUAL_ZOOM = true
+                    MANUAL_ZOOM_LEVEL = clamp(MANUAL_ZOOM_LEVEL / 1.2f, MIN_CAMERA_ZOOM, MAX_CAMERA_ZOOM)
+                    return true
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun onWindowLayoutInfoChange() {
@@ -420,7 +450,7 @@ fun MainActivityPreview() {
 
     universe.initTest()
 
-    Spaaaace(modifier = Modifier.fillMaxSize(), universe)
+    Spaaaace(modifier = Modifier.fillMaxSize(), u = universe)
     DebugText(DEBUG_TEXT)
     Telemetry(universe, true)
 }
@@ -542,6 +572,8 @@ fun Spaaaace(
         val targetZoom =
             if (DYNAMIC_ZOOM) {
                 clamp(500f / distToNearestSurf, MIN_CAMERA_ZOOM, MAX_CAMERA_ZOOM)
+            } else if (MANUAL_ZOOM) {
+                MANUAL_ZOOM_LEVEL
             } else {
                 DEFAULT_CAMERA_ZOOM
             }
