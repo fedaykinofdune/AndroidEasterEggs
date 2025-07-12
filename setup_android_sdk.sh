@@ -14,6 +14,18 @@ CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-lin
 PLATFORM_VERSION="34"
 BUILD_TOOLS_VERSION="34.0.0"
 
+# Install Java 17 if not already installed
+echo "☕ Installing Java 17..."
+if ! dpkg -s openjdk-17-jdk >/dev/null 2>&1; then
+    sudo apt-get update
+    sudo apt-get install -y openjdk-17-jdk
+fi
+
+# Set Java 17 as default
+echo "🔧 Setting Java 17 as default..."
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH
+
 # Create SDK directory
 echo "📁 Creating Android SDK directory..."
 sudo mkdir -p $ANDROID_SDK_ROOT
@@ -48,9 +60,10 @@ export PATH=$PATH:$ANDROID_SDK_ROOT/platform-tools
 # Create environment setup file
 echo "📝 Creating environment setup file..."
 sudo tee /etc/environment.d/android-sdk.conf > /dev/null << EOF
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ANDROID_HOME=$ANDROID_SDK_ROOT
 ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
-PATH=\$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
+PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:\$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
 EOF
 
 # Accept licenses non-interactively
