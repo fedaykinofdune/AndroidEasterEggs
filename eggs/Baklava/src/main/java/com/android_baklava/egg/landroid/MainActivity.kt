@@ -278,7 +278,7 @@ fun Telemetry(universe: VisibleUniverse, showControls: Boolean) {
                                     MANUAL_ZOOM = true
                                     MANUAL_ZOOM_LEVEL = DEFAULT_CAMERA_ZOOM
                                 } else {
-                                    MANUAL_ZOOM = false
+                                    MANUAL_ZOOM = false // <-- ensure manual zoom is off when autopilot is on
                                 }
                             }
                         }
@@ -578,8 +578,12 @@ fun Spaaaace(
             } else {
                 DEFAULT_CAMERA_ZOOM
             }
-        if (!TOUCH_CAMERA_ZOOM) {
-            cameraZoom = expSmooth(cameraZoom, targetZoom, dt = u.dt, speed = 1.5f)
+        if (DYNAMIC_ZOOM) {
+            cameraZoom = targetZoom // direct set for dynamic zoom
+        } else if (MANUAL_ZOOM && !TOUCH_CAMERA_ZOOM) {
+            cameraZoom = MANUAL_ZOOM_LEVEL // direct set for manual zoom
+        } else if (!TOUCH_CAMERA_ZOOM) {
+            cameraZoom = DEFAULT_CAMERA_ZOOM // fallback
         }
 
         if (!TOUCH_CAMERA_PAN) cameraOffset = (u.follow?.pos ?: Vec2.Zero) * -1f
