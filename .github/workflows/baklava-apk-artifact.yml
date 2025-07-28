@@ -1,4 +1,4 @@
-name: Build Baklava APK
+name: Build Main App APK
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-baklava-apk:
+  build-main-app-apk:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,11 +22,11 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build Baklava debug APK
-        run: ./gradlew :eggs:Baklava:assembleDebug
+      - name: Build main app debug APK
+        run: ./gradlew app:assembleDebug
 
-      - name: Upload Baklava APK
+      - name: Upload all main app APKs
         uses: actions/upload-artifact@v4
         with:
-          name: baklava-debug-apk
-          path: eggs/Baklava/build/outputs/apk/debug/*.apk
+          name: main-app-debug-apks
+          path: app/build/outputs/apk/**/*.apk
