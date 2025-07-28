@@ -1,0 +1,32 @@
+name: Build Baklava APK
+
+on:
+  push:
+    branches:
+      - cursor/fix-baklava-landroid-gravity-simulation-664e
+  workflow_dispatch:
+
+jobs:
+  build-baklava-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Baklava debug APK
+        run: ./gradlew :eggs:Baklava:assembleDebug
+
+      - name: Upload Baklava APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: baklava-debug-apk
+          path: eggs/Baklava/build/outputs/apk/debug/*.apk
